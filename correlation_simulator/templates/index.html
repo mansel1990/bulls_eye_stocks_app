@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Correlation Simulator — 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #1A73E8;
+      --primary-lt: #D3E3FD;
+      --teal: #00897B;
+      --teal-lt: #E0F2F1;
+      --green: #1B8833;
+      --green-lt: #E8F5E9;
+      --red: #C62828;
+      --red-lt: #FFEBEE;
+      --amber: #F57F17;
+      --amber-lt: #FFF8E1;
+      --surface: #F4F7FE;
+      --surface-var: #EEF2F8;
+      --outline: #C5CDD9;
+      --on-surf: #1C2333;
+      --on-surf-var: #44546A;
+      --r-lg: 16px; --r-md: 12px; --r-sm: 8px;
+      --sh1: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+      --sh2: 0 4px 16px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+      --sh3: 0 8px 32px rgba(0,0,0,.10);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--surface);color:var(--on-surf);min-height:100vh}
+
+    /* App Bar */
+    .app-bar{background:#fff;box-shadow:var(--sh1);padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .ab-left{display:flex;align-items:center;gap:14px}
+    .ab-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--teal));display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+    .ab-title{font-size:17px;font-weight:700;color:var(--on-surf)}
+    .ab-sub{font-size:12px;color:var(--on-surf-var)}
+    .date-pill{background:var(--primary-lt);color:var(--primary);padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+
+    /* Layout */
+    .main{max-width:1440px;margin:0 auto;padding:24px 28px}
+
+    /* Action Bar */
+    .action-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#fff;border-radius:var(--r-lg);padding:16px 24px;margin-bottom:24px;box-shadow:var(--sh1);border:1px solid var(--outline)}
+    .progress-info{font-size:13px;color:var(--on-surf-var);margin-left:auto}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:8px;border-radius:24px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;letter-spacing:.2px}
+    .btn .material-icons-round{font-size:18px}
+    .btn-primary{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(26,115,232,.3)}
+    .btn-primary:hover{background:#1557B0;transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,115,232,.4)}
+    .btn-primary:disabled{background:#B0BEC5;box-shadow:none;cursor:not-allowed;transform:none}
+    .btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(0,137,123,.3)}
+    .btn-teal:hover{background:#00796B}
+    .btn-reset{background:transparent;color:var(--red);border:2px solid var(--red)}
+    .btn-reset:hover{background:var(--red-lt)}
+    .btn-ghost{background:var(--surface-var);color:var(--on-surf-var)}
+    .btn-ghost:hover{background:#DDE3EC}
+    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Metric Cards */
+    .metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+    .metric-card{background:#fff;border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--sh1);border:1px solid var(--outline);border-top-width:3px;display:flex;flex-direction:column;gap:6px;transition:box-shadow .2s}
+    .metric-card:hover{box-shadow:var(--sh2)}
+    .mc-primary{border-top-color:var(--primary)}
+    .mc-teal{border-top-color:var(--teal)}
+    .mc-green{border-top-color:var(--green)}
+    .mc-amber{border-top-color:var(--amber)}
+    .mc-red{border-top-color:var(--red)}
+    .mc-label{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--on-surf-var);display:flex;align-items:center;gap:5px}
+    .mc-label .material-icons-round{font-size:14px}
+    .mc-value{font-size:26px;font-weight:700;line-height:1.1}
+    .mc-sub{font-size:12px;color:var(--on-surf-var)}
+    .pos{color:var(--green)} .neg{color:var(--red)} .neu{color:var(--primary)}
+
+    /* 4 Section Grid */
+    .four-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+    @media(max-width:960px){.four-grid{grid-template-columns:1fr}}
+    .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+    @media(max-width:960px){.chart-grid{grid-template-columns:1fr}}
+
+    /* Cards */
+    .card{background:#fff;border-radius:var(--r-lg);box-shadow:var(--sh1);border:1px solid var(--outline);overflow:hidden}
+    .card-head{padding:16px 22px 12px;border-bottom:1px solid var(--surface-var);display:flex;align-items:center;justify-content:space-between}
+    .card-title{font-size:14px;font-weight:700;color:var(--on-surf);display:flex;align-items:center;gap:8px}
+    .card-title .material-icons-round{font-size:17px}
+    .ct-buy{color:var(--green)}
+    .ct-sell{color:var(--red)}
+    .ct-open{color:var(--primary)}
+    .ct-hist{color:var(--on-surf-var)}
+    .badge{border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700}
+    .badge-green{background:var(--green-lt);color:var(--green)}
+    .badge-red{background:var(--red-lt);color:var(--red)}
+    .badge-blue{background:var(--primary-lt);color:var(--primary)}
+    .badge-grey{background:var(--surface-var);color:var(--on-surf-var)}
+    .chart-wrap{padding:16px 20px 20px;height:250px}
+
+    /* Tables */
+    .tbl-wrap{overflow-x:auto;max-height:320px;overflow-y:auto}
+    .tbl-wrap::-webkit-scrollbar{width:4px}
+    .tbl-wrap::-webkit-scrollbar-track{background:transparent}
+    .tbl-wrap::-webkit-scrollbar-thumb{background:var(--outline);border-radius:4px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{background:var(--surface-var);color:var(--on-surf-var);font-weight:600;font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:9px 14px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1}
+    tbody tr{border-bottom:1px solid var(--surface-var);transition:background .15s}
+    tbody tr:hover{background:#F0F5FF}
+    td{padding:9px 14px;vertical-align:middle}
+    .mono{font-family:'Roboto Mono',monospace;font-size:12px}
+    .empty{text-align:center;padding:36px 20px;color:var(--on-surf-var);font-size:13px}
+    .empty .material-icons-round{font-size:36px;display:block;margin-bottom:6px;opacity:.3}
+
+    /* Chips */
+    .chip{display:inline-flex;align-items:center;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap}
+    .ch-buy{background:var(--green-lt);color:var(--green)}
+    .ch-sell{background:var(--red-lt);color:var(--red)}
+    .ch-open{background:var(--primary-lt);color:var(--primary)}
+    .ch-mean{background:#F3E5F5;color:#6A1B9A}
+    .ch-maxhold{background:var(--amber-lt);color:var(--amber)}
+    .peers-cell{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    /* Progress overlay */
+    #prog-overlay{
+      position:fixed;inset:0;background:rgba(28,35,51,.55);backdrop-filter:blur(3px);
+      z-index:200;display:none;align-items:center;justify-content:center
+    }
+    #prog-overlay.show{display:flex}
+    .prog-card{
+      background:#fff;border-radius:20px;padding:32px 36px;min-width:380px;max-width:480px;
+      box-shadow:var(--sh3);display:flex;flex-direction:column;gap:18px
+    }
+    .prog-header{display:flex;align-items:center;gap:12px}
+    .prog-icon{
+      width:42px;height:42px;border-radius:12px;
+      background:linear-gradient(135deg,var(--primary),var(--teal));
+      display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0
+    }
+    .prog-icon .material-icons-round{font-size:22px;animation:spin .9s linear infinite}
+    .prog-title{font-size:15px;font-weight:700;color:var(--on-surf)}
+    .prog-date{font-size:12px;color:var(--on-surf-var);margin-top:2px}
+    .prog-bar-track{
+      height:8px;background:var(--surface-var);border-radius:8px;overflow:hidden
+    }
+    .prog-bar-fill{
+      height:100%;border-radius:8px;
+      background:linear-gradient(90deg,var(--primary),var(--teal));
+      transition:width .4s cubic-bezier(.4,0,.2,1);width:0%
+    }
+    .prog-row{display:flex;justify-content:space-between;align-items:center}
+    .prog-step{font-size:13px;color:var(--on-surf-var);flex:1}
+    .prog-pct{font-size:13px;font-weight:700;color:var(--primary);white-space:nowrap;margin-left:12px}
+    .prog-eta{font-size:12px;color:var(--on-surf-var);display:flex;align-items:center;gap:4px}
+    .prog-eta .material-icons-round{font-size:14px}
+
+    /* Toast */
+    #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1C2333;color:#fff;padding:11px 22px;border-radius:24px;font-size:14px;font-weight:500;box-shadow:var(--sh3);opacity:0;transition:all .3s;pointer-events:none;z-index:9999;display:flex;align-items:center;gap:8px;white-space:nowrap}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    #toast.ok{background:var(--green)}
+    #toast.err{background:var(--red)}
+
+    /* Section label strip */
+    .day-label{font-size:12px;font-weight:600;color:var(--on-surf-var);padding:8px 22px;background:var(--surface-var);border-bottom:1px solid var(--outline)}
+  </style>
+</head>
+<body>
+
+<div class="app-bar">
+  <div class="ab-left">
+    <div class="ab-logo"><span class="material-icons-round">trending_up</span></div>
+    <div>
+      <div class="ab-title">Correlation Mean-Reversion Simulator</div>
+      <div class="ab-sub">NSE · Walk-Forward 2026</div>
+    </div>
+  </div>
+  <div class="date-pill">
+    <span class="material-icons-round" style="font-size:15px">event</span>
+    Sim Date: <span id="cur-date">—</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button class="btn btn-primary" id="btn-adv" onclick="advance()">
+      <span class="spinner" id="spin"></span>
+      <span class="material-icons-round" id="adv-icon">skip_next</span>
+      Advance Day
+    </button>
+    <button class="btn btn-ghost" onclick="warmup()">
+      <span class="material-icons-round">bolt</span>Warm Up Engine
+    </button>
+    <button class="btn btn-reset" onclick="resetSim()">
+      <span class="material-icons-round">restart_alt</span>Reset to Jan 1, 2026
+    </button>
+
+    <!-- Date navigation -->
+    <div style="display:flex;align-items:center;gap:6px;margin-left:auto;background:var(--surface-var);border-radius:24px;padding:4px 8px;border:1px solid var(--outline)">
+      <button class="btn btn-ghost" id="btn-prev" onclick="navDate(-1)" style="padding:6px 10px;border-radius:20px" title="Previous day">
+        <span class="material-icons-round" style="font-size:18px">chevron_left</span>
+      </button>
+      <input type="date" id="date-picker" min="2026-01-01"
+        style="border:none;background:transparent;font-size:13px;font-weight:600;color:var(--on-surf);cursor:pointer;outline:none;font-family:inherit"
+        onchange="jumpToDate(this.value)"/>
+      <button class="btn btn-ghost" id="btn-next" onclick="navDate(1)" style="padding:6px 10px;border-radius:20px" title="Next day">
+        <span class="material-icons-round" style="font-size:18px">chevron_right</span>
+      </button>
+      <button class="btn btn-ghost" onclick="jumpToDate('latest')" style="padding:6px 12px;border-radius:20px;font-size:12px" title="Jump to latest run date">
+        <span class="material-icons-round" style="font-size:16px">update</span>Latest
+      </button>
+    </div>
+  </div>
+
+  <!-- Metric Cards -->
+  <div class="metrics-row">
+    <div class="metric-card mc-primary">
+      <div class="mc-label"><span class="material-icons-round">account_balance_wallet</span>Total Deployed</div>
+      <div class="mc-value neu" id="m-inv">₹0</div>
+      <div class="mc-sub" id="m-open-inv">Open: ₹0</div>
+    </div>
+    <div class="metric-card mc-teal">
+      <div class="mc-label"><span class="material-icons-round">payments</span>Realised P&L</div>
+      <div class="mc-value" id="m-pnl">₹0</div>
+      <div class="mc-sub" id="m-gain">0.00%</div>
+    </div>
+    <div class="metric-card mc-green">
+      <div class="mc-label"><span class="material-icons-round">emoji_events</span>Win Rate</div>
+      <div class="mc-value" id="m-wr">0%</div>
+      <div class="mc-sub" id="m-wl">0W / 0L</div>
+    </div>
+    <div class="metric-card mc-amber">
+      <div class="mc-label"><span class="material-icons-round">inventory_2</span>Open Positions</div>
+      <div class="mc-value neu" id="m-open">0</div>
+      <div class="mc-sub" id="m-closed">0 trades closed</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-grid">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="material-icons-round ct-open">bar_chart</span>Daily Activity</div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-act"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="material-icons-round ct-teal" style="color:var(--teal)">show_chart</span>Cumulative P&L</div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-pnl"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 4 Sections Grid -->
+  <div class="four-grid">
+
+    <!-- Buys on date -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="material-icons-round ct-buy">add_shopping_cart</span>Bought</div>
+        <span class="badge badge-green" id="b-bought">0</span>
+      </div>
+      <div id="day-bought-label" class="day-label" style="display:none"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Ticker</th><th>Entry Price</th><th>Z-Score</th><th>Peer Slope</th></tr></thead>
+          <tbody id="tbody-bought">
+            <tr><td colspan="4" class="empty"><span class="material-icons-round">shopping_cart</span>Advance to see buys</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sells on date -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="material-icons-round ct-sell">sell</span>Sold</div>
+        <span class="badge badge-red" id="b-sold">0</span>
+      </div>
+      <div id="day-sold-label" class="day-label" style="display:none"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Ticker</th><th>Entry ₹</th><th>Exit ₹</th><th>P&L %</th><th>Hold</th><th>Reason</th></tr></thead>
+          <tbody id="tbody-sold">
+            <tr><td colspan="6" class="empty"><span class="material-icons-round">sell</span>Advance to see sells</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Open Positions -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="material-icons-round ct-open">folder_open</span>Open Positions</div>
+        <span class="badge badge-blue" id="b-open">0</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Ticker</th><th>Entry Date</th><th>Entry ₹</th><th>Cur Price</th><th>P&L %</th><th>P&L ₹</th><th>Hold</th><th>Invested</th></tr></thead>
+          <tbody id="tbody-open">
+            <tr><td colspan="8" class="empty"><span class="material-icons-round">hourglass_empty</span>No open positions</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Closed Trades -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="material-icons-round ct-hist">history</span>Closed Trades</div>
+        <span class="badge badge-grey" id="b-hist">0</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Ticker</th><th>Exit Date</th><th>Entry ₹</th><th>Exit ₹</th><th>P&L %</th><th>P&L ₹</th><th>Hold</th><th>Reason</th></tr></thead>
+          <tbody id="tbody-hist">
+            <tr><td colspan="8" class="empty"><span class="material-icons-round">history</span>No closed trades yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<!-- Progress overlay -->
+<div id="prog-overlay">
+  <div class="prog-card">
+    <div class="prog-header">
+      <div class="prog-icon"><span class="material-icons-round">sync</span></div>
+      <div>
+        <div class="prog-title">Advancing Simulation</div>
+        <div class="prog-date" id="prog-date">—</div>
+      </div>
+    </div>
+    <div class="prog-bar-track"><div class="prog-bar-fill" id="prog-fill"></div></div>
+    <div class="prog-row">
+      <span class="prog-step" id="prog-step">Initialising…</span>
+      <span class="prog-pct" id="prog-pct">0%</span>
+    </div>
+    <div class="prog-row">
+      <span class="prog-eta">
+        <span class="material-icons-round">timer</span>
+        <span id="prog-elapsed">0s elapsed</span>
+      </span>
+      <span class="prog-eta">
+        <span class="material-icons-round">schedule</span>
+        ETA: <span id="prog-eta-val">—</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let chartAct = null, chartPnl = null;
+let viewedDate = null;       // currently viewed date (null = latest)
+let lastRunDate = null;      // most recent sim run date
+let simDates = [];           // sorted list of all dates with data
+
+const fmtInr = v => {
+  if (!v && v !== 0) return '₹0';
+  const a = Math.abs(v);
+  if (a >= 1e7) return (v>=0?'':'−') + '₹' + (a/1e7).toFixed(2) + ' Cr';
+  if (a >= 1e5) return (v>=0?'':'−') + '₹' + (a/1e5).toFixed(2) + ' L';
+  return (v>=0?'':'−') + '₹' + a.toLocaleString('en-IN',{maximumFractionDigits:0});
+};
+const pCls = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+const sign  = v => v >= 0 ? '+' : '';
+
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + (type === 'ok' ? 'ok' : type === 'err' ? 'err' : '');
+  setTimeout(() => t.className = '', 3200);
+}
+
+async function loadStatus(asOf) {
+  const url  = asOf ? `/api/status?as_of=${asOf}` : '/api/status';
+  const res  = await fetch(url);
+  const data = await res.json();
+  // Track available dates from chart
+  if (data.chart && data.chart.dates) simDates = data.chart.dates;
+  lastRunDate = data.last_run_date;
+  render(data);
+}
+
+function jumpToDate(val) {
+  if (val === 'latest') {
+    viewedDate = null;
+    document.getElementById('date-picker').value = lastRunDate || '';
+    loadStatus(null);
+  } else {
+    viewedDate = val;
+    loadStatus(val);
+  }
+}
+
+function navDate(dir) {
+  const picker = document.getElementById('date-picker');
+  const cur = picker.value;
+  if (!cur) return;
+  // Find in simDates list, or step by calendar day
+  const idx = simDates.indexOf(cur);
+  let next;
+  if (idx >= 0) {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= simDates.length) return;
+    next = simDates[newIdx];
+  } else {
+    // Fall back to calendar day step (skip weekends)
+    const d = new Date(cur);
+    d.setDate(d.getDate() + dir);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + dir);
+    next = d.toISOString().slice(0, 10);
+  }
+  picker.value = next;
+  viewedDate = next;
+  loadStatus(next);
+}
+
+function render(data) {
+  const m = data.metrics;
+
+  // Sync date picker to viewed date
+  const picker = document.getElementById('date-picker');
+  picker.max = data.last_run_date || data.current_date;
+  if (!picker.value) picker.value = data.viewed_date || data.last_run_date || '';
+  else if (data.viewed_date) picker.value = data.viewed_date;
+
+  // Disable prev/next at boundaries
+  const curIdx = simDates.indexOf(picker.value);
+  document.getElementById('btn-prev').disabled = curIdx <= 0;
+  document.getElementById('btn-next').disabled = curIdx < 0 || curIdx >= simDates.length - 1;
+
+  // Date + progress (always show sim pointer date)
+  document.getElementById('cur-date').textContent = data.current_date;
+  const start = new Date('2026-01-01'), cur = new Date(data.current_date), end = new Date(data.sim_end);
+  const pct = Math.min(100, Math.round((cur - start) / (end - start) * 100));
+  const days = Math.round((cur - start) / 86400000);
+  document.getElementById('btn-adv').disabled = data.current_date >= data.sim_end;
+
+  // Metrics
+  document.getElementById('m-inv').textContent = fmtInr(m.total_invested);
+  document.getElementById('m-open-inv').textContent = 'Open: ' + fmtInr(m.open_invested);
+  const pEl = document.getElementById('m-pnl');
+  pEl.textContent = fmtInr(m.realised_pnl);
+  pEl.className = 'mc-value ' + pCls(m.realised_pnl);
+  const gEl = document.getElementById('m-gain');
+  gEl.textContent = sign(m.gain_pct) + m.gain_pct + '% overall';
+  gEl.className = 'mc-sub ' + pCls(m.gain_pct);
+  const wrEl = document.getElementById('m-wr');
+  wrEl.textContent = m.win_rate + '%';
+  wrEl.className = 'mc-value ' + (m.win_rate >= 50 ? 'pos' : 'neg');
+  document.getElementById('m-wl').textContent = `${m.wins}W / ${m.losses}L`;
+  document.getElementById('m-open').textContent = data.open_positions.length;
+  document.getElementById('m-closed').textContent = `${m.total_closed} trades closed`;
+
+  // ── Bought on viewed date ─────────────────────────────────────────────────
+  const vd = data.viewed_date;
+  document.getElementById('b-bought').textContent = data.todays_buys.length;
+  const lbl1 = document.getElementById('day-bought-label');
+  if (vd) { lbl1.style.display = 'block'; lbl1.textContent = vd; }
+  else { lbl1.style.display = 'none'; }
+  const tb = document.getElementById('tbody-bought');
+  tb.innerHTML = data.todays_buys.length === 0
+    ? `<tr><td colspan="4" class="empty"><span class="material-icons-round">shopping_cart</span>No buys on this day</td></tr>`
+    : data.todays_buys.map(b => `<tr>
+        <td><strong>${b.ticker}</strong></td>
+        <td class="mono">₹${(+b.entry_price).toFixed(2)}</td>
+        <td class="mono">${(+b.entry_z).toFixed(3)}</td>
+        <td class="mono">${(+b.peer_slope_pct).toFixed(2)}%</td>
+      </tr>`).join('');
+
+  // ── Sold on viewed date ───────────────────────────────────────────────────
+  document.getElementById('b-sold').textContent = data.todays_sells.length;
+  const lbl2 = document.getElementById('day-sold-label');
+  if (vd) { lbl2.style.display = 'block'; lbl2.textContent = vd; }
+  else { lbl2.style.display = 'none'; }
+  const ts = document.getElementById('tbody-sold');
+  ts.innerHTML = data.todays_sells.length === 0
+    ? `<tr><td colspan="6" class="empty"><span class="material-icons-round">sell</span>No sells on last run</td></tr>`
+    : data.todays_sells.map(s => {
+        const cls = pCls(+s.pnl_pct);
+        const chip = s.exit_reason === 'MEAN'
+          ? `<span class="chip ch-mean">Mean Rev</span>`
+          : `<span class="chip ch-maxhold">Max Hold</span>`;
+        return `<tr>
+          <td><strong>${s.ticker}</strong></td>
+          <td class="mono">₹${(+s.entry_price).toFixed(2)}</td>
+          <td class="mono">₹${(+s.exit_price).toFixed(2)}</td>
+          <td class="mono ${cls}">${sign(+s.pnl_pct)}${(+s.pnl_pct).toFixed(2)}%</td>
+          <td>${s.hold_days}d</td>
+          <td>${chip}</td>
+        </tr>`;
+      }).join('');
+
+  // ── Open Positions ────────────────────────────────────────────────────────
+  document.getElementById('b-open').textContent = data.open_positions.length;
+  const to = document.getElementById('tbody-open');
+  to.innerHTML = data.open_positions.length === 0
+    ? `<tr><td colspan="8" class="empty"><span class="material-icons-round">hourglass_empty</span>No open positions</td></tr>`
+    : data.open_positions.map(p => {
+        const hasPx  = p.current_price != null;
+        const pnlPct = p.unreal_pnl_pct;
+        const pnlRs  = p.unreal_pnl_rs;
+        const cls    = hasPx ? pCls(pnlPct) : '';
+        return `<tr>
+          <td><strong>${p.ticker}</strong></td>
+          <td class="mono">${p.entry_date}</td>
+          <td class="mono">₹${(+p.entry_price).toFixed(2)}</td>
+          <td class="mono">${hasPx ? '₹' + p.current_price.toFixed(2) : '—'}</td>
+          <td class="mono ${cls}">${hasPx ? sign(pnlPct)+pnlPct.toFixed(2)+'%' : '—'}</td>
+          <td class="mono ${cls}">${hasPx ? sign(pnlRs)+'₹'+Math.abs(pnlRs).toLocaleString('en-IN',{maximumFractionDigits:0}) : '—'}</td>
+          <td><span class="chip ch-open">${p.hold_days}d</span></td>
+          <td class="mono">${fmtInr(+p.amount_invested)}</td>
+        </tr>`;
+      }).join('');
+
+  // ── Closed Trades (sorted exit_date desc) ─────────────────────────────────
+  document.getElementById('b-hist').textContent = data.history.length;
+  const th = document.getElementById('tbody-hist');
+  th.innerHTML = data.history.length === 0
+    ? `<tr><td colspan="8" class="empty"><span class="material-icons-round">history</span>No closed trades yet</td></tr>`
+    : data.history.map(h => {
+        const cls = pCls(+h.pnl_pct);
+        const pnlRs = ((+h.pnl_pct) / 100 * (+h.amount_invested));
+        const chip = h.exit_reason === 'MEAN'
+          ? `<span class="chip ch-mean">Mean Rev</span>`
+          : `<span class="chip ch-maxhold">Max Hold</span>`;
+        return `<tr>
+          <td><strong>${h.ticker}</strong></td>
+          <td class="mono">${h.exit_date || '—'}</td>
+          <td class="mono">₹${(+h.entry_price).toFixed(2)}</td>
+          <td class="mono">₹${(+(h.exit_price||0)).toFixed(2)}</td>
+          <td class="mono ${cls}">${sign(+h.pnl_pct)}${(+h.pnl_pct).toFixed(2)}%</td>
+          <td class="mono ${cls}">${sign(pnlRs)}₹${Math.abs(pnlRs).toLocaleString('en-IN',{maximumFractionDigits:0})}</td>
+          <td>${h.hold_days}d</td>
+          <td>${chip}</td>
+        </tr>`;
+      }).join('');
+
+  // Charts
+  renderCharts(data.chart);
+}
+
+function renderCharts(c) {
+  const ctxA = document.getElementById('chart-act').getContext('2d');
+  if (chartAct) chartAct.destroy();
+  chartAct = new Chart(ctxA, {
+    type: 'bar',
+    data: {
+      labels: c.dates,
+      datasets: [
+        { label: 'Open Positions', data: c.open_positions, type: 'line',
+          borderColor: '#1A73E8', backgroundColor: 'rgba(26,115,232,.08)',
+          fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2, yAxisID: 'y1' },
+        { label: 'Bought', data: c.bought, backgroundColor: 'rgba(27,136,51,.8)',
+          borderRadius: 4, yAxisID: 'y' },
+        { label: 'Sold',   data: c.sold,   backgroundColor: 'rgba(198,40,40,.8)',
+          borderRadius: 4, yAxisID: 'y' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { font:{size:11}, boxWidth:12 } },
+        tooltip: { backgroundColor:'rgba(28,35,51,.92)', padding:10, cornerRadius:8 } },
+      scales: {
+        x: { grid:{display:false}, ticks:{font:{size:10}, maxTicksLimit:10} },
+        y: { grid:{color:'rgba(0,0,0,.04)'}, ticks:{font:{size:10}}, beginAtZero:true },
+        y1:{ position:'right', grid:{display:false}, ticks:{font:{size:10}}, beginAtZero:true }
+      }
+    }
+  });
+
+  const ctxP = document.getElementById('chart-pnl').getContext('2d');
+  if (chartPnl) chartPnl.destroy();
+  let acc = 0;
+  const cum = c.realised_pnl.map(v => +(acc += v).toFixed(2));
+  chartPnl = new Chart(ctxP, {
+    type: 'line',
+    data: {
+      labels: c.dates,
+      datasets: [{ label: 'Cumulative P&L (₹)', data: cum,
+        borderColor: '#00897B', backgroundColor: 'rgba(0,137,123,.07)',
+        fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false},
+        tooltip:{ backgroundColor:'rgba(28,35,51,.92)', padding:10, cornerRadius:8,
+          callbacks:{ label: ctx => ' ₹' + ctx.parsed.y.toLocaleString('en-IN') } } },
+      scales: {
+        x: { grid:{display:false}, ticks:{font:{size:10}, maxTicksLimit:10} },
+        y: { grid:{color:'rgba(0,0,0,.04)'}, ticks:{font:{size:10},
+          callback: v => v >= 1e5 ? '₹'+(v/1e5).toFixed(1)+'L' : v >= 1e3 ? '₹'+(v/1e3).toFixed(0)+'K' : '₹'+v } }
+      }
+    }
+  });
+}
+
+function advance() {
+  const btn     = document.getElementById('btn-adv');
+  const spin    = document.getElementById('spin');
+  const icon    = document.getElementById('adv-icon');
+  const overlay = document.getElementById('prog-overlay');
+  const fill    = document.getElementById('prog-fill');
+  const stepEl  = document.getElementById('prog-step');
+  const pctEl   = document.getElementById('prog-pct');
+  const etaEl   = document.getElementById('prog-eta-val');
+  const elEl    = document.getElementById('prog-elapsed');
+  const dateEl  = document.getElementById('prog-date');
+
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+  icon.style.display = 'none';
+
+  // Show overlay
+  overlay.classList.add('show');
+  fill.style.width = '0%';
+  stepEl.textContent = 'Connecting…';
+  pctEl.textContent  = '0%';
+  etaEl.textContent  = '—';
+  elEl.textContent   = '0s elapsed';
+  dateEl.textContent = 'Preparing…';
+
+  const wallStart = Date.now();
+  let lastPct = 0;
+  let timerInterval = null;
+
+  // Update elapsed every second
+  timerInterval = setInterval(() => {
+    const sec = ((Date.now() - wallStart) / 1000).toFixed(1);
+    elEl.textContent = sec + 's elapsed';
+
+    // ETA estimation based on current pct speed
+    if (lastPct > 2 && lastPct < 100) {
+      const elapsed = (Date.now() - wallStart) / 1000;
+      const rate = lastPct / elapsed;                    // pct per second
+      const remaining = (100 - lastPct) / rate;
+      etaEl.textContent = remaining > 1
+        ? Math.ceil(remaining) + 's'
+        : '< 1s';
+    }
+  }, 500);
+
+  const es = new EventSource('/api/advance/stream');
+
+  es.addEventListener('progress', e => {
+    const d = JSON.parse(e.data);
+    lastPct = d.pct;
+    fill.style.width  = d.pct + '%';
+    pctEl.textContent = d.pct + '%';
+    stepEl.textContent = d.step;
+    dateEl.textContent = `Elapsed: ${d.elapsed}s`;
+  });
+
+  es.addEventListener('done', e => {
+    const d = JSON.parse(e.data);
+    fill.style.width  = '100%';
+    pctEl.textContent = '100%';
+    stepEl.textContent = `Done — ${d.buys_today} bought · ${d.sells_today} sold`;
+    dateEl.textContent = `Completed in ${d.elapsed}s`;
+    etaEl.textContent  = 'Done';
+
+    es.close();
+    clearInterval(timerInterval);
+
+    // Hide overlay after brief pause so user sees 100%
+    setTimeout(async () => {
+      overlay.classList.remove('show');
+      btn.disabled = false;
+      spin.style.display = 'none';
+      icon.style.display = 'inline';
+      toast(`✓ ${d.advanced_to} — ${d.buys_today} bought · ${d.sells_today} sold`, 'ok');
+      viewedDate = null;
+      await loadStatus(null);
+    }, 700);
+  });
+
+  es.addEventListener('error', e => {
+    const d = JSON.parse(e.data || '{}');
+    es.close();
+    clearInterval(timerInterval);
+    overlay.classList.remove('show');
+    btn.disabled = false;
+    spin.style.display = 'none';
+    icon.style.display = 'inline';
+    toast('Error: ' + (d.step || 'unknown'), 'err');
+  });
+
+  es.onerror = () => {
+    // Only fires if connection drops unexpectedly (not our error event)
+    if (es.readyState === EventSource.CLOSED) {
+      clearInterval(timerInterval);
+      overlay.classList.remove('show');
+      btn.disabled = false;
+      spin.style.display = 'none';
+      icon.style.display = 'inline';
+    }
+  };
+}
+
+async function resetSim() {
+  if (!confirm('Reset all simulation data back to Jan 1, 2026?')) return;
+  await fetch('/api/reset', { method: 'POST' });
+  toast('Simulation reset to 2026-01-01');
+  await loadStatus(null);
+}
+
+async function warmup() {
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-icons-round" style="animation:spin .7s linear infinite">refresh</span> Loading…';
+  try {
+    const res  = await fetch('/api/warmup');
+    const data = await res.json();
+    toast(`Engine ready: ${data.loaded_tickers} tickers`, 'ok');
+    btn.innerHTML = '<span class="material-icons-round">check</span> Engine Ready';
+  } catch(e) {
+    toast('Warmup failed: ' + e.message, 'err');
+    btn.disabled = false;
+    btn.innerHTML = '<span class="material-icons-round">bolt</span> Warm Up Engine';
+  }
+}
+
+loadStatus(null);
+</script>
+</body>
+</html>
