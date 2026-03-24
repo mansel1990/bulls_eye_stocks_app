@@ -1,0 +1,29 @@
+# Large data files
+bulls_eye_stocks_app/daily_data/
+bulls_eye_stocks_app/new_technique/experiments/sheets/
+news_cache/
+news_models/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.env
+.env.local
+correlation_simulator/.env
+.claude/settings.local.json
+
+# Model binaries (large) — keep .pkl paths referenced in code
+# Uncomment below to exclude them:
+# *.pkl
+
+# Misc
+nul
+*.log
+.DS_Store
+Thumbs.db
