@@ -1,16 +1,20 @@
 """
 db.py — PostgreSQL connection + schema creation for the simulator
 """
+import os
 import psycopg2
 import psycopg2.extras
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DB = dict(
-    host     = "ep-quiet-unit-a1p4t66q-pooler.ap-southeast-1.aws.neon.tech",
-    dbname   = "neondb",
-    user     = "neondb_owner",
-    password = "npg_6gTyXD1qoRLd",
+    host     = os.getenv("DB_HOST", "ep-quiet-unit-a1p4t66q-pooler.ap-southeast-1.aws.neon.tech"),
+    dbname   = os.getenv("DB_NAME", "neondb"),
+    user     = os.getenv("DB_USER", "neondb_owner"),
+    password = os.getenv("DB_PASSWORD", ""),
     sslmode  = "require",
-    port     = 5432,
+    port     = int(os.getenv("DB_PORT", 5432)),
 )
 
 SCHEMA_SQL = """

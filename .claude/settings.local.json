@@ -1,7 +1,25 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(py --version)",
+      "Read(//c/Users/ADMIN/AppData/Local/Programs/**)",
+      "Bash(ls /c/Python*)",
+      "Bash(where python:*)",
+      "Bash(winget --version)",
+      "Bash(winget install:*)",
+      "Read(//c//**)",
+      "Bash(find /c -name python.exe -not -path */WindowsApps/*)",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python311/python.exe -m pip install -r \"c:/Projects/Backend/bulls_eye_stocks_app/correlation_simulator/requirements.txt\")",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python311/python.exe -m uvicorn app:app --reload --port 5050)",
+      "Bash(find /c/Projects/Backend/bulls_eye_stocks_app -name .env* -o -name config*)",
+      "Bash(grep -r \"DATABASE\\\\|DB_\\\\|POSTGRES\\\\|API_\" /c/Projects/Backend/bulls_eye_stocks_app/correlation_simulator --include=*.py)",
+      "Bash(grep -r \"notification\\\\|email\\\\|alert\\\\|logs\" /c/Projects/Backend/bulls_eye_stocks_app/correlation_simulator --include=*.py)",
+      "Bash(grep -n \"CORS\\\\|cors\\\\|allow_origins\\\\|credentials\" /c/Projects/Backend/bulls_eye_stocks_app/correlation_simulator/*.py)",
+      "Bash(find /c/Projects/Backend/bulls_eye_stocks_app -name *.md -o -name *.txt)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ]
   }
 }

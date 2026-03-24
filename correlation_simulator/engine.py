@@ -19,13 +19,25 @@ import numpy as np
 import pandas as pd
 from glob import glob
 from datetime import date, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-DATA_DIR   = r"d:\stocks prediction\bulls_eye_stocks_app\daily_data"
-FUND_FILE  = r"d:\stocks prediction\bulls_eye_stocks_app\new_technique\experiments\sheets\fundamental_score_2026-02-19.xlsx"
-MODEL_PATH = r"d:\stocks prediction\bulls_eye_stocks_app\new_technique\stratergies\models\corr_ml_v4b.pkl"
-FEAT_PATH  = r"d:\stocks prediction\bulls_eye_stocks_app\new_technique\stratergies\models\corr_ml_v4b_features.pkl"
+# Base directory of this file — used to resolve relative paths from .env
+_HERE = os.path.dirname(os.path.abspath(__file__))
+
+def _resolve(env_key: str, default: str) -> str:
+    val = os.getenv(env_key, default)
+    if not os.path.isabs(val):
+        val = os.path.normpath(os.path.join(_HERE, val))
+    return val
+
+DATA_DIR   = _resolve("DATA_DIR",   "../daily_data")
+FUND_FILE  = _resolve("FUND_FILE",  "../new_technique/experiments/sheets/fundamental_score_2026-02-19.xlsx")
+MODEL_PATH = _resolve("MODEL_PATH", "../new_technique/stratergies/models/corr_ml_v4b.pkl")
+FEAT_PATH  = _resolve("FEAT_PATH",  "../new_technique/stratergies/models/corr_ml_v4b_features.pkl")
 
 # ── Strategy parameters (loose — ML does the filtering) ───────────────────────
 CORR_WINDOW       = 120

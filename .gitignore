@@ -14,6 +14,9 @@ __pycache__/
 dist/
 build/
 .env
+.env.local
+correlation_simulator/.env
+.claude/settings.local.json
 
 # Model binaries (large) — keep .pkl paths referenced in code
 # Uncomment below to exclude them:

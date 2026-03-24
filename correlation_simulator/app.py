@@ -7,13 +7,18 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 import asyncio
 import json
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from dotenv import load_dotenv
+load_dotenv()
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 import psycopg2
 import psycopg2.extras
 
@@ -24,6 +29,27 @@ from engine import compute_signals_for_date, get_exit_signals, load_all_tickers
 _executor = ThreadPoolExecutor(max_workers=2)
 
 app = FastAPI(title="Correlation Simulator")
+
+# ── CORS ──────────────────────────────────────────────────────────────────────
+_allowed_origin = os.getenv("ALLOWED_ORIGIN", "https://www.mcubetechstudio.com")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[_allowed_origin, "http://localhost:3000"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+# ── API Key auth ───────────────────────────────────────────────────────────────
+_API_KEY = os.getenv("API_KEY", "")
+
+@app.middleware("http")
+async def check_api_key(request: Request, call_next):
+    if request.url.path.startswith("/api"):
+        # Support header OR query param (query param needed for SSE via EventSource)
+        key = request.headers.get("x-api-key") or request.query_params.get("key")
+        if _API_KEY and key != _API_KEY:
+            return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    return await call_next(request)
 
 SIM_START  = date(2026, 1, 1)
 SIM_END    = date.today()
