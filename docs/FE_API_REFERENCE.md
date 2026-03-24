@@ -271,9 +271,9 @@ const res = await fetch(`${API_URL}/api/reset`, {
 
 ---
 
-### GET /api/warmup
+### GET /api/warmup — Wake Up
 
-Pre-loads all 347 ticker CSVs and caches into server memory. Call this once after the server cold-starts to make the first `/api/advance` fast.
+Pre-loads all 347 ticker CSVs and caches into server memory (~500MB RAM). Call this before using the app each session. Takes 10–30 seconds.
 
 **Request:**
 ```typescript
@@ -286,6 +286,60 @@ await fetch(`${API_URL}/api/warmup`, {
 ```json
 { "loaded_tickers": 347 }
 ```
+
+---
+
+### POST /api/sleep — Sleep
+
+Clears all in-memory caches, dropping server RAM from ~500MB back to ~80MB. Call this when you're done using the app to keep Railway hosting costs low.
+
+**Request:**
+```typescript
+await fetch(`${API_URL}/api/sleep`, {
+  method: "POST",
+  headers: { "x-api-key": API_KEY },
+});
+```
+
+**Response:**
+```json
+{ "status": "sleeping", "message": "Caches cleared. Call /api/warmup to wake up." }
+```
+
+---
+
+### Wake / Sleep — Recommended UI Pattern
+
+Add two buttons to the app header or settings panel:
+
+```typescript
+// Wake Up button — call before advancing
+async function wakeUp() {
+  setStatus("Waking up...");
+  const res = await fetch(`${API_URL}/api/warmup`, {
+    headers: { "x-api-key": API_KEY },
+  });
+  const data = await res.json();
+  setStatus(`Ready — ${data.loaded_tickers} tickers loaded`);
+}
+
+// Sleep button — call when done for the session
+async function sleep() {
+  await fetch(`${API_URL}/api/sleep`, {
+    method: "POST",
+    headers: { "x-api-key": API_KEY },
+  });
+  setStatus("Server sleeping — press Wake Up to resume");
+}
+```
+
+**Typical daily flow:**
+1. Open app → press **Wake Up** (wait ~20s)
+2. Do your morning advances
+3. Press **Sleep** when done
+4. Evening → press **Wake Up** again → advance → **Sleep**
+
+This keeps the Railway server at ~80MB RAM when idle, well within the $5/month plan.
 
 ---
 

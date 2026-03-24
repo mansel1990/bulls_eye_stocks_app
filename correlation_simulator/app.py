@@ -61,22 +61,8 @@ INVEST_PER = 10_000.0
 @app.on_event("startup")
 def on_startup():
     init_db()
-    # Pre-warm all caches in background thread so first advance is fast
-    import threading
-    def _warm():
-        try:
-            from engine import load_all_tickers, _build_price_df, _get_peers_map, _get_zscores_for_date
-            import pandas as pd
-            td = load_all_tickers()
-            pdf = _build_price_df(td)
-            _get_peers_map(td, pdf)
-            # Pre-compute z-scores for today's prev business day
-            prev = pd.Timestamp(SIM_END) - pd.tseries.offsets.BDay(1)
-            _get_zscores_for_date(prev)
-            print(f"[warmup] Engine ready — {len(td)} tickers loaded, z-scores cached", flush=True)
-        except Exception as e:
-            print(f"[warmup] Warning: {e}", flush=True)
-    threading.Thread(target=_warm, daemon=True).start()
+    # Warmup is disabled at startup to keep idle RAM low (~80MB vs ~500MB).
+    # Call GET /api/warmup manually before the first advance to pre-load caches.
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -595,3 +581,21 @@ def api_reset() -> dict[str, Any]:
 def api_warmup() -> dict[str, Any]:
     count = len(load_all_tickers())
     return {"loaded_tickers": count}
+
+
+@app.post("/api/sleep")
+def api_sleep() -> dict[str, Any]:
+    """Clear all in-memory caches to drop RAM from ~500MB back to ~80MB.
+    Call this when done using the app. Call /api/warmup again before next use."""
+    import engine
+    engine._ticker_data_cache = None
+    engine._price_df_cache    = None
+    engine._peers_cache       = None
+    engine._corr_strength_cache = None
+    engine._zscore_cache      = {}
+    engine._open_prices_cache = {}
+    engine._ml_model          = None
+    engine._ml_features       = None
+    engine._fund_cache        = None
+    engine._mkt_regime_cache  = None
+    return {"status": "sleeping", "message": "Caches cleared. Call /api/warmup to wake up."}
