@@ -34,17 +34,28 @@ app = FastAPI(title="Correlation Simulator")
 _allowed_origin = os.getenv("ALLOWED_ORIGIN", "https://www.mcubetechstudio.com")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[_allowed_origin, "http://localhost:3000"],
+    allow_origins=[
+        _allowed_origin,
+        "https://www.mcubetechstudio.com",
+        "https://mcubetechstudio.com",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+    ],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 # ── API Key auth ───────────────────────────────────────────────────────────────
 _API_KEY = os.getenv("API_KEY", "")
+_LOCALHOST_HOSTS = {"localhost", "127.0.0.1", "::1"}
 
 @app.middleware("http")
 async def check_api_key(request: Request, call_next):
     if request.url.path.startswith("/api"):
+        # Skip auth for local development
+        if request.url.hostname in _LOCALHOST_HOSTS:
+            return await call_next(request)
         # Support header OR query param (query param needed for SSE via EventSource)
         key = request.headers.get("x-api-key") or request.query_params.get("key")
         if _API_KEY and key != _API_KEY:

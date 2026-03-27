@@ -1,6 +1,5 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(pip install:*)",
       "Bash(py --version)",
@@ -19,7 +18,25 @@
       "Bash(grep -n \"CORS\\\\|cors\\\\|allow_origins\\\\|credentials\" /c/Projects/Backend/bulls_eye_stocks_app/correlation_simulator/*.py)",
       "Bash(find /c/Projects/Backend/bulls_eye_stocks_app -name *.md -o -name *.txt)",
       "Skill(update-config)",
-      "Skill(update-config:*)"
-    ]
+      "Skill(update-config:*)",
+      "Bash(railway status:*)",
+      "Bash(railway link:*)",
+      "Bash(railway whoami:*)",
+      "Bash(railway list:*)",
+      "Bash(railway service:*)",
+      "Bash(railway variables:*)",
+      "Bash(railway --help)",
+      "Bash(railway project:*)",
+      "Bash(railway deploy:*)",
+      "Bash(railway up:*)",
+      "Bash(railway logs:*)",
+      "Bash(railway deployment:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://bullseyestocksapp-production.up.railway.app/)",
+      "Bash(curl -s https://bullseyestocksapp-production.up.railway.app/)",
+      "Bash(curl -s https://bullseyestocksapp-production.up.railway.app/api/tickers)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://bullseyestocksapp-production.up.railway.app/docs)",
+      "Bash(railway variable:*)"
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }
